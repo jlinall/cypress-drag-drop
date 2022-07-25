@@ -22,6 +22,10 @@ const DragSimulator = {
     const target = { ...commonOptions, ...options.target }
     return { source, target }
   },
+  get dragged() {
+    const currentTargetPosition = this.targetElement.getBoundingClientRect()
+    return !this.rectsEqual(this.initialSourcePosition, currentTargetPosition)
+  },
   get dropped() {
     const currentSourcePosition = this.source.getBoundingClientRect()
     return !this.rectsEqual(this.initialSourcePosition, currentSourcePosition)
@@ -86,7 +90,7 @@ const DragSimulator = {
       })
   },
   dragover(clientPosition = {}) {
-    if (!this.counter || (!this.dropped && this.hasTriesLeft)) {
+    if (!this.counter || (!this.dragged && this.hasTriesLeft)) {
       this.counter += 1
       return this.target
         .trigger('dragover', {
@@ -107,7 +111,7 @@ const DragSimulator = {
         .wait(this.DELAY_INTERVAL_MS)
         .then(() => this.dragover(clientPosition))
     }
-    if (!this.dropped) {
+    if (!this.dragged) {
       console.error(`Exceeded maximum tries of: ${this.MAX_TRIES}, aborting`)
       return false
     } else {
@@ -129,7 +133,9 @@ const DragSimulator = {
       .then(() => this.dragover())
       .then((success) => {
         if (success) {
-          return this.drop().then(() => true)
+          return this.drop().then(() =>
+            this.dropped
+          )
         } else {
           return false
         }
